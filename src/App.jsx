@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getAuthData, clearAuthData } from "./utils/storage";
 import CreateRoom from "./components/CreateRoom";
 import JoinRoom from "./components/JoinRoom";
