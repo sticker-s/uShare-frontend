@@ -41,7 +41,7 @@ export default function JoinRoom({ onJoined, onCancel }) {
                 if (res.status === 'approved') {
                     clearInterval(pollingRef.current);
                     setStatus('approved');
-                    saveAuthData(res.token, res.roomId, res.device.name, res.device.role);
+                    saveAuthData(res.deviceToken, res.roomId, deviceName, 'member');
                     if (onJoined) onJoined();
                 } else if (res.status === 'rejected') {
                     clearInterval(pollingRef.current);
@@ -55,7 +55,7 @@ export default function JoinRoom({ onJoined, onCancel }) {
             }
         }, 2000);
         return () => clearInterval(pollingRef.current);
-    }, [requestId, status, onJoined]);
+    }, [requestId, status, onJoined, deviceName]);
 
     return (
         <div>
