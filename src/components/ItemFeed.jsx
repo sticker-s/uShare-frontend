@@ -9,7 +9,7 @@ export default function ItemFeed({ refreshTrigger }) {
   const fetchItems = useCallback(async () => {
     try {
       const res = await apiFetch('/items');
-      const list = res.items || res.data || (Array.isArray(res) ? res : []);
+      const list = res.items || (Array.isArray(res) ? res : []);
       setItems(list);
       setError('');
     } catch (err) {
@@ -57,7 +57,7 @@ export default function ItemFeed({ refreshTrigger }) {
             <li key={item._id} style={{ marginBottom: '1rem' }}>
               <div>
                 <small>
-                  <strong>{item.deviceId?.name || 'Device'}</strong> |{' '}
+                  <strong>{item.senderDeviceId?.name || 'Device'}</strong> |{' '}
                   {item.type.toUpperCase()} | Expires: {expiresT}
                 </small>
               </div>
