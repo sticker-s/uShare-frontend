@@ -1,22 +1,24 @@
-import { useState, useEffect } from 'react';
-import { apiFetch } from '../api/client';
+import { useState, useEffect } from "react";
+import { apiFetch } from "../api/client";
 
 export default function PairingManager() {
   const [activeCode, setActiveCode] = useState(null);
   const [expiresAt, setExpiresAt] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleGenerateCode = async () => {
-    setError('');
-    setLoading(true)
+    setError("");
+    setLoading(true);
     try {
-      const res = await apiFetch('/pairing/generate-code', {
-        method: 'POST',
+      const res = await apiFetch("/pairing/generate-code", {
+        method: "POST",
       });
       setActiveCode(res.code);
       setExpiresAt(new Date(Date.now() + res.expiresInSeconds * 1000));
+      setCopied(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -24,12 +26,19 @@ export default function PairingManager() {
     }
   };
 
+  const handleCopyCode = () => {
+    if (!activeCode) return;
+    navigator.clipboard.writeText(activeCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
   const fetchPending = async () => {
     try {
-      const res = await apiFetch('/pairing/requests');
+      const res = await apiFetch("/pairing/requests");
       setPendingRequests(res.requests || []);
-    } catch (err) {
-      // ignoring it for now
+    } catch {
+      // ignore background polling errors
     }
   };
 
@@ -40,11 +49,11 @@ export default function PairingManager() {
   }, []);
 
   const handleRespond = async (requestId, decision) => {
-    setError('');
+    setError("");
     try {
       await apiFetch(`/pairing/respond/${requestId}`, {
-          method: 'POST',
-          body: JSON.stringify({ action: decision }),
+        method: "POST",
+        body: JSON.stringify({ action: decision }),
       });
       fetchPending();
     } catch (err) {
@@ -53,51 +62,68 @@ export default function PairingManager() {
   };
 
   return (
-    <div>
-      <h3>Pairing & Device Access (Owner Controls)</h3>
-      {error && <p>{error}</p>}
-
-      <div>
-        <button onClick={handleGenerateCode} disabled={loading}>
-          {loading ? 'Generating...' : 'Generate 6-Digit Pairing Code'}
+    <section className="card">
+      <div className="card-header">
+        <div>
+          <h3 className="card-title">Device Pairing</h3>
+          <p className="card-subtitle">Invite and approve nearby devices</p>
+        </div>
+        <button className="btn btn-secondary" onClick={handleGenerateCode} disabled={loading}>
+          {loading ? "Generating..." : "New Code"}
         </button>
-        {activeCode && (
-          <div>
-            <p>
-              Pairing Code: <strong>{activeCode}</strong>
-            </p>
-            <p>
-              Expires around:{' '}
-              {expiresAt ? expiresAt.toLocaleTimeString() : ''}
-            </p>
-          </div>
-        )}
       </div>
-      <div>
-        <h4>Pending Requests ({pendingRequests.length})</h4>
-        {pendingRequests.length === 0 ? (
-          <p>No pending requests.</p>
-        ) : (
-          <ul>
+
+      {error && <p className="alert-error">{error}</p>}
+
+      {activeCode && (
+        <div className="pairing-box">
+          <div>
+            <div className="mono pairing-code">{activeCode}</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
+              Expires at {expiresAt ? expiresAt.toLocaleTimeString() : ""}
+            </div>
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={handleCopyCode}>
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
+
+      {pendingRequests.length > 0 && (
+        <>
+          <div className="divider" />
+          <p style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--text-muted)", marginBottom: "0.6rem" }}>
+            Pending Requests ({pendingRequests.length})
+          </p>
+          <ul className="request-list">
             {pendingRequests.map((req) => (
-              <li key={req._id}>
-                <span>
-                  <strong>{req.deviceName}</strong> (Requested at:{' '}
-                  {new Date(req.createdAt).toLocaleTimeString()})
-                </span>
-                {' '}
-                <button onClick={() => handleRespond(req._id, 'approve')} >
-                  Approve
-                </button>
-                {' '}
-                <button onClick={() => handleRespond(req._id, 'reject')} >
-                  Reject
-                </button>
+              <li key={req._id} className="request-item">
+                <div>
+                  <div style={{ fontSize: "0.875rem", fontWeight: 500 }}>{req.deviceName}</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    {new Date(req.createdAt).toLocaleTimeString()}
+                  </div>
+                </div>
+                <div className="btn-group">
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: "0.35rem 0.7rem", fontSize: "0.78rem" }}
+                    onClick={() => handleRespond(req._id, "approve")}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleRespond(req._id, "reject")}
+                  >
+                    Reject
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
-        )}
-      </div>
-    </div>
+        </>
+      )}
+    </section>
   );
 }
