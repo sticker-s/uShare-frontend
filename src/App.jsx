@@ -5,6 +5,7 @@ import JoinRoom from "./components/JoinRoom";
 import PairingManager from "./components/PairingManager";
 import ShareTextLink from "./components/ShareTextLink";
 import ItemFeed from "./components/ItemFeed";
+import FileUpload from "./components/FileUpload";
 
 const THEMES = [
   { id: "light", label: "Light" },
@@ -84,6 +85,8 @@ export default function App() {
             {auth.role === "owner" && <PairingManager />}
 
             <ShareTextLink onItemShared={triggerFeedRefresh} />
+
+            <FileUpload onFileUploaded={triggerFeedRefresh} />
 
             <ItemFeed refreshTrigger={refreshTrigger} />
           </main>
