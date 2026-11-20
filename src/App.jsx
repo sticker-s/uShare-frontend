@@ -6,6 +6,7 @@ import PairingManager from "./components/PairingManager";
 import ShareTextLink from "./components/ShareTextLink";
 import ItemFeed from "./components/ItemFeed";
 import FileUpload from "./components/FileUpload";
+import DeviceList from "./components/DeviceList";
 
 const THEMES = [
   { id: "light", label: "Light" },
@@ -83,6 +84,8 @@ export default function App() {
             </section>
 
             {auth.role === "owner" && <PairingManager />}
+
+            <DeviceList />
 
             <ShareTextLink onItemShared={triggerFeedRefresh} />
 
