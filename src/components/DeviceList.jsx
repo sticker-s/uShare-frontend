@@ -1,26 +1,30 @@
-import { useCallback, useState } from "react";
-import { clearAuthData, getAuthData } from '../utils/storage';
-import { apiFetch } from '../api/client';
-import { useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { clearAuthData, getAuthData } from "../utils/storage";
+import { apiFetch } from "../api/client";
 
 export default function DeviceList({ onDeviceKicked }) {
   const [devices, setDevices] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [kickingId, setKickingId] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
 
   const auth = getAuthData();
-  const isOwner = auth.role === 'owner';
+  const isOwner = auth.role === "owner";
 
   const fetchDevices = useCallback(async () => {
     try {
-      const res = await apiFetch('/devices');
-      const list = res.devices;
+      const res = await apiFetch("/devices");
+      const list = res.devices || [];
       setDevices(list);
-      setError('');
+      setError("");
     } catch (err) {
-      // for kicked users
-      if (err.message.includes('401') || err.message.includes('403') || err.message.toLowerCase().includes('unauthorized')) {
-        alert('Excommunicado');
+      if (
+        err.message.includes("401") ||
+        err.message.includes("403") ||
+        err.message.toLowerCase().includes("unauthorized")
+      ) {
         clearAuthData();
         window.location.reload();
       } else {
@@ -37,51 +41,124 @@ export default function DeviceList({ onDeviceKicked }) {
     return () => clearInterval(interval);
   }, [fetchDevices]);
 
-  const handleKick = async (deviceId, deviceName) => {
-    const confirmKick = window.confirm(`sure to kick ${deviceName} ?`);
-    if (!confirmKick) return;
+  // Auto-disarm confirmation after 4 seconds if untouched
+  useEffect(() => {
+    if (!confirmingId) return;
+    const timer = setTimeout(() => {
+      setConfirmingId(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [confirmingId]);
+
+  const handleKickAction = async (deviceId) => {
+    // Step 1: Arm the button in place without shifting cursor position
+    if (confirmingId !== deviceId) {
+      setConfirmingId(deviceId);
+      setError("");
+      return;
+    }
+
+    // Step 2: Confirmed — execute kick with smooth exit transition
+    setConfirmingId(null);
+    setKickingId(deviceId);
 
     try {
       await apiFetch(`/devices/${deviceId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
-      setDevices((prev) => prev.filter((d) => d._id !== deviceId));
-      if (onDeviceKicked) {
-        onDeviceKicked();
-      }
+      setRemovingId(deviceId);
+      setTimeout(() => {
+        setDevices((prev) => prev.filter((d) => d._id !== deviceId));
+        setRemovingId(null);
+        setKickingId(null);
+        if (onDeviceKicked) {
+          onDeviceKicked();
+        }
+      }, 240);
     } catch (err) {
-      alert(`Failed to delete: ${err.message}`);
+      setKickingId(null);
+      setError(`Failed to remove device: ${err.message}`);
     }
   };
 
   return (
-    <div>
-      <h3>Connected Devices</h3>
-      {error && <p>{error}</p>}
-      {loading && devices.length === 0 && <p>Loading devices ...</p>}
+    <section className="card">
+      <div className="card-header">
+        <div className="device-header-title">
+          <h3 className="card-title">Connected Devices</h3>
+          <span className="badge">{devices.length}</span>
+        </div>
+        <button type="button" className="btn btn-ghost" onClick={fetchDevices}>
+          Refresh
+        </button>
+      </div>
 
-      <ul>
-        {devices.map((d) => {
-          const isSelf = d.name === auth.deviceName;
-          const canKick = isOwner && !isSelf && d.role !== 'owner';
+      {error && <p className="alert-error">{error}</p>}
+      {loading && devices.length === 0 && (
+        <p className="empty-state">Loading devices...</p>
+      )}
+      {!loading && devices.length === 0 && !error && (
+        <p className="empty-state">No devices connected.</p>
+      )}
 
-          return (
-            <li key={d._id} style={{ marginBottom: '0.5rem' }}>
-              <span>
-                <strong>{d.name} </strong> ({d.role})
-                {isSelf && <em> - (This Device</em>}
-              </span>
-              {' '}
-              {canKick && (
-                <button onClick={() => handleKick(d._id, d.name)}>
-                  Excommunicado
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+      {devices.length > 0 && (
+        <ul className="request-list">
+          {devices.map((d) => {
+            const isSelf = d.name === auth.deviceName;
+            const canKick = isOwner && !isSelf && d.role !== "owner";
+            const isArmed = confirmingId === d._id;
+            const isKicking = kickingId === d._id;
+            const isRemoving = removingId === d._id;
+
+            return (
+              <li
+                key={d._id}
+                className={`request-item device-row ${isRemoving ? "removing" : ""}`}
+              >
+                <div className="device-info">
+                  <div className="device-name-row">
+                    <span className="status-dot" />
+                    <span className="device-name">{d.name}</span>
+                  </div>
+                  <div className="device-badges">
+                    <span className="badge">{d.role}</span>
+                    {isSelf && <span className="badge badge-self">This Device</span>}
+                  </div>
+                </div>
+
+                {canKick && (
+                  <div className="kick-controls">
+                    {isArmed && !isKicking && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost cancel-arm-btn"
+                        onClick={() => setConfirmingId(null)}
+                        aria-label="Cancel removal"
+                      >
+                        Cancel
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={isKicking}
+                      className={`btn btn-danger kick-btn ${isArmed ? "armed" : ""}`}
+                      onClick={() => handleKickAction(d._id)}
+                    >
+                      {isKicking
+                        ? "Removing..."
+                        : isArmed
+                        ? "Confirm?"
+                        : "Excommunicado"}
+                    </button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

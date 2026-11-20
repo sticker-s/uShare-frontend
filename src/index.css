@@ -13,6 +13,7 @@
   --danger-bg: #fef2f2;
   --success: #16a34a;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --danger-fg: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -29,6 +30,7 @@
   --danger-bg: rgba(239, 68, 68, 0.12);
   --success: #4ade80;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --danger-fg: #09090b;
 }
 
 [data-theme="sepia"] {
@@ -45,6 +47,7 @@
   --danger-bg: rgba(185, 28, 28, 0.08);
   --success: #15803d;
   --shadow: 0 1px 3px rgba(43, 38, 35, 0.05);
+  --danger-fg: #fbf9f5;
 }
 
 [data-theme="midnight"] {
@@ -61,6 +64,7 @@
   --danger-bg: rgba(251, 113, 133, 0.12);
   --success: #34d399;
   --shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --danger-fg: #0b1120;
 }
 
 * {
@@ -543,4 +547,127 @@ textarea {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Connected Devices & Inline Confirm Animation */
+.device-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-row {
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.device-row.removing {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.device-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.device-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.badge-self {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.kick-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.cancel-arm-btn {
+  animation: fadeSlideIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.kick-btn {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.kick-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.kick-btn.armed {
+  background: var(--danger);
+  color: var(--danger-fg);
+  font-weight: 600;
+  animation: armPulse 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Depleting 4-second auto-cancel bar */
+.kick-btn.armed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: currentColor;
+  opacity: 0.45;
+  transform-origin: left;
+  animation: shrinkBar 4s linear forwards;
+}
+
+@keyframes armPulse {
+  0% {
+    transform: scale(0.94);
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shrinkBar {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
