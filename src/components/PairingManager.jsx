@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api/client";
+import { getRoomKey } from "../utils/storage"
 
 export default function PairingManager() {
   const [activeCode, setActiveCode] = useState(null);
@@ -51,9 +52,14 @@ export default function PairingManager() {
   const handleRespond = async (requestId, decision) => {
     setError("");
     try {
+      const roomKey = getRoomKey();
+
       await apiFetch(`/pairing/respond/${requestId}`, {
         method: "POST",
-        body: JSON.stringify({ action: decision }),
+        body: JSON.stringify({
+          action: decision,
+          roomKey: decision === 'approve' ? roomKey : null,
+        }),
       });
       fetchPending();
     } catch (err) {

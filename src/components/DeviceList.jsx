@@ -41,7 +41,6 @@ export default function DeviceList({ onDeviceKicked }) {
     return () => clearInterval(interval);
   }, [fetchDevices]);
 
-  // Auto-disarm confirmation after 4 seconds if untouched
   useEffect(() => {
     if (!confirmingId) return;
     const timer = setTimeout(() => {
@@ -51,14 +50,12 @@ export default function DeviceList({ onDeviceKicked }) {
   }, [confirmingId]);
 
   const handleKickAction = async (deviceId) => {
-    // Step 1: Arm the button in place without shifting cursor position
     if (confirmingId !== deviceId) {
       setConfirmingId(deviceId);
       setError("");
       return;
     }
 
-    // Step 2: Confirmed — execute kick with smooth exit transition
     setConfirmingId(null);
     setKickingId(deviceId);
 

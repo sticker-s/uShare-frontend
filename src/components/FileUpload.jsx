@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { apiFetch } from "../api/client";
+import { encryptFileBlob } from "../utils/crypto";
 
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -27,6 +28,7 @@ export default function FileUpload({ onFileUploaded }) {
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       selectFile(e.target.files[0]);
+      setError('');
     }
   };
 
@@ -56,15 +58,18 @@ export default function FileUpload({ onFileUploaded }) {
     setError("");
 
     try {
+      setStatus("encrypting");
+      const encryptedPayload = await encryptFileBlob(file);
+
       setStatus("signing");
       const signRes = await apiFetch("/items/upload-signature", {
         method: "POST",
         body: JSON.stringify({
           originalName: file.name,
-          size: file.size,
+          size: encryptedPayload.size,
           mimeType: file.type || "application/octet-stream",
           expiry,
-          isEncrypted: false,
+          isEncrypted: true,
         }),
       });
 
@@ -82,7 +87,7 @@ export default function FileUpload({ onFileUploaded }) {
 
       setStatus("uploading");
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file",encryptedPayload, file.name);
       formData.append("api_key", apiKey);
       formData.append("timestamp", timestamp);
       formData.append("signature", signature);
@@ -96,7 +101,8 @@ export default function FileUpload({ onFileUploaded }) {
 
       if (!cloudRes.ok) {
         const errorText = await cloudRes.text();
-        let errorMsg = "Direct cloud upload failed";
+        console.error('Cloudinary upload error:', cloudRes.status, errorText);
+        let errorMsg = `Direct cloud upload failed(${cloudRes.status})`;
         try {
           const cloudErr = JSON.parse(errorText);
           errorMsg = cloudErr?.message || errorMsg;
@@ -134,6 +140,7 @@ export default function FileUpload({ onFileUploaded }) {
   };
 
   const buttonLabel = {
+    encrypting: "Encrypting...",
     signing: "Preparing upload...",
     uploading: "Uploading...",
     confirming: "Activating file...",

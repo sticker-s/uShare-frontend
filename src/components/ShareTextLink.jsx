@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { apiFetch } from "../api/client";
+import { encryptText } from "../utils/crypto";
 
 export default function ShareTextLink({ onItemShared }) {
   const [content, setContent] = useState("");
@@ -16,20 +17,21 @@ export default function ShareTextLink({ onItemShared }) {
 
     setLoading(true);
     try {
+      const encryptedContent = await encryptText(content.trim());
+
       await apiFetch("/items/text-link", {
         method: "POST",
         body: JSON.stringify({
           type,
-          content: content.trim(),
+          content: encryptedContent,
           expiry,
-          isEncrypted: false,
+          isEncrypted: true,
         }),
       });
 
       setContent("");
-      if (onItemShared) {
-        onItemShared();
-      }
+      if (onItemShared) onItemShared();
+
     } catch (err) {
       setError(err.message);
     } finally {

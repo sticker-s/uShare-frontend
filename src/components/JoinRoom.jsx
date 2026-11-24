@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api/client";
-import { saveAuthData } from "../utils/storage";
+import { saveAuthData, saveRoomKey } from "../utils/storage";
 
 export default function JoinRoom({ onJoined, onCancel }) {
   const [pairingCode, setPairingCode] = useState("");
@@ -41,6 +41,9 @@ export default function JoinRoom({ onJoined, onCancel }) {
         if (res.status === "approved") {
           clearInterval(pollingRef.current);
           setStatus("approved");
+          if (res.roomKey) {
+            saveRoomKey(res.roomKey);
+          }
           saveAuthData(res.deviceToken, res.roomId, deviceName, "member");
           if (onJoined) onJoined();
         } else if (res.status === "rejected") {

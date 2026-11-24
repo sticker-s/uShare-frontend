@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { apiFetch } from "../api/client";
-import { saveAuthData } from "../utils/storage";
+import { saveAuthData, saveRoomKey } from "../utils/storage";
+import { generateRandomRoomKey } from "../utils/crypto"
 
 export default function CreateRoom({ onRoomCreated }) {
   const [roomName, setRoomName] = useState("");
@@ -19,6 +20,8 @@ export default function CreateRoom({ onRoomCreated }) {
         body: JSON.stringify({ roomName, deviceName }),
       });
 
+      const autoRoomKey = generateRandomRoomKey();
+      saveRoomKey(autoRoomKey);
       saveAuthData(res.rawToken, res.roomId, res.ownerDevice.name, res.ownerDevice.role);
 
       if (onRoomCreated) {

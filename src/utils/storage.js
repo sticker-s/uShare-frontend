@@ -1,22 +1,28 @@
+const AUTH_KEY = 'ushare_auth';
+const ROOM_KEY = 'ushare_room_key';
+
 export const saveAuthData = (token, roomId, deviceName, role) => {
-    localStorage.setItem('ushare_token', token);
-    localStorage.setItem('ushare_roomId', roomId);
-    localStorage.setItem('ushare_deviceName', deviceName);
-    localStorage.setItem('ushare_role', role);
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ token, roomId, deviceName, role }));
 };
 
 export const getAuthData = () => {
-    return {
-        token: localStorage.getItem('ushare_token'),
-        roomId: localStorage.getItem('ushare_roomId'),
-        deviceName: localStorage.getItem('ushare_deviceName'),
-        role: localStorage.getItem('ushare_role')
-    };
+  const data = localStorage.getItem(AUTH_KEY);
+  return data ? JSON.parse(data) : { token: null, roomId: null, deviceName: null, role: null };
 };
 
 export const clearAuthData = () => {
-    localStorage.removeItem('ushare_token');
-    localStorage.removeItem('ushare_roomId');
-    localStorage.removeItem('ushare_deviceName');
-    localStorage.removeItem('ushare_role');
+  localStorage.removeItem('token');
+  localStorage.removeItem('roomId');
+  localStorage.removeItem('deviceName');
+  localStorage.removeItem('role');
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(ROOM_KEY);
+}
+
+export const saveRoomKey = (keyString) => {
+  localStorage.setItem(ROOM_KEY, keyString);
+}
+
+export const getRoomKey = ()  => {
+  return localStorage.getItem(ROOM_KEY);
 }
